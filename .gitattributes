@@ -1,0 +1,7 @@
+# В репозитории концы строк всегда LF, а на диске как настроен git
+* text=auto
+# cmd.exe не умеет разбирать файлы с переводами строк LF
+*.cmd text eol=crlf
+*.onnx binary
+*.ico binary
+*.png binary

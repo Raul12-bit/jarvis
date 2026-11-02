@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.env
+*.log
+
+# Копия прошлой версии: нужна только на этом компьютере
+backup/
+# Локальные настройки приложения Claude
+.claude/
+# Данные живут в %LOCALAPPDATA%\Jarvis. Страховка на случай, если их скопируют в папку проекта: тут ключи и память
+config.json
+runtime.json
+*.db

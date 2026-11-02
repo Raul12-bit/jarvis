@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Джарвис</title>
+  <link rel="icon" type="image/png" href="/static/icon.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-state="sleep" data-tab="talk" class="is-booting">
+  <svg class="sprite" aria-hidden="true" width="0" height="0">
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 3.500a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0v-5a3 3 0 0 0-3-3Z"/><path d="M5.500 11.500a6.500 6.500 0 0 0 13 0M12 18v2.500"/></symbol>
+    <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M9 9v2.500a3 3 0 0 0 4.600 2.500M15 11V6.500a3 3 0 0 0-5.700-1.300"/><path d="M5.500 11.500a6.500 6.500 0 0 0 10.200 5.300M18.500 11.500a6.400 6.400 0 0 1-.6 2.700M12 18v2.500M4 4l16 16"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4.500 12h14M13 6.500l5.500 5.500-5.500 5.500"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.500v2.300M12 18.200v2.300M3.500 12h2.300M18.200 12h2.300M6 6l1.600 1.600M16.400 16.400 18 18M18 6l-1.600 1.600M7.600 16.400 6 18"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.500 12S6 5.500 12 5.500 21.500 12 21.500 12 18 18.500 12 18.500 2.500 12 2.500 12Z"/><circle cx="12" cy="12" r="2.800"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  </svg>
+
+  <div class="backdrop" aria-hidden="true"></div>
+  <div class="aura aura--arc" aria-hidden="true"></div>
+  <div class="aura aura--gold" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__name" aria-label="Джарвис">J.A.R.V.I.S.</span>
+      <span id="brandState" class="brand__state">Запуск систем</span>
+    </div>
+    <div id="lookBadge" class="look-badge" role="status" hidden>
+      <svg class="icon"><use href="#i-eye"/></svg><span>Смотрю на экран</span>
+    </div>
+    <dl class="telemetry">
+      <div class="telemetry__item telemetry__item--place" title="Ваш город и погода">
+        <dt id="placeLabel">Алматы</dt><dd id="ambientLabel">—</dd>
+      </div>
+      <div class="telemetry__item" title="Какая модель отвечала последней">
+        <dt>Мозг</dt><dd id="brainLabel">нет ключа</dd>
+      </div>
+      <div class="telemetry__item" title="От конца вашей фразы до начала ответа">
+        <dt>Отклик</dt><dd id="latencyLabel">—</dd>
+      </div>
+      <div class="telemetry__item" title="Джарвис вместе с его окном: доля всего процессора и личная память">
+        <dt>Нагрузка</dt><dd id="loadLabel">—</dd>
+      </div>
+    </dl>
+    <time id="clock" class="clock" aria-label="Текущее время">--:--:--</time>
+    <button id="settingsBtn" class="icon-btn" type="button" aria-label="Открыть настройки" title="Настройки (Ctrl+,)">
+      <svg class="icon"><use href="#i-gear"/></svg>
+    </button>
+  </header>
+
+  <main class="stage">
+    <aside id="today" class="today" aria-label="Состояние и сегодняшний день">
+      <section class="panel" aria-labelledby="sysTitle">
+        <h2 id="sysTitle" class="panel__title">Системы</h2>
+        <ul class="gauges">
+          <li class="gauge" id="gaugeCpu"><span class="gauge__name">Процессор</span><span class="gauge__value" data-value>—</span><span class="gauge__track"><span class="gauge__fill" data-fill></span></span></li>
+          <li class="gauge" id="gaugeRam"><span class="gauge__name">Память</span><span class="gauge__value" data-value>—</span><span class="gauge__track"><span class="gauge__fill" data-fill></span></span></li>
+          <li class="gauge" id="gaugeBattery" hidden><span class="gauge__name" data-name>Батарея</span><span class="gauge__value" data-value>—</span><span class="gauge__track"><span class="gauge__fill" data-fill></span></span></li>
+          <li class="gauge" id="gaugeDisk"><span class="gauge__name">Диск занят</span><span class="gauge__value" data-value>—</span><span class="gauge__track"><span class="gauge__fill" data-fill></span></span></li>
+        </ul>
+        <p id="netLine" class="net-line" title="Скорость сети прямо сейчас">—</p>
+      </section>
+
+      <section class="panel" aria-labelledby="protoTitle">
+        <h2 id="protoTitle" class="panel__title">Протоколы</h2>
+        <ul id="protocols" class="protocols">
+          <li class="protocol" id="protoBrain"><span class="protocol__dot" aria-hidden="true"></span><span class="protocol__name">Мозг</span><span class="protocol__state" data-state>проверяю</span></li>
+          <li class="protocol" id="protoEar"><span class="protocol__dot" aria-hidden="true"></span><span class="protocol__name">Слух</span><span class="protocol__state" data-state>проверяю</span></li>
+          <li class="protocol" id="protoMic"><span class="protocol__dot" aria-hidden="true"></span><span class="protocol__name">Микрофон</span><span class="protocol__state" data-state>проверяю</span></li>
+          <li class="protocol" id="protoMascot"><span class="protocol__dot" aria-hidden="true"></span><span class="protocol__name">Талисман</span><span class="protocol__state" data-state>проверяю</span></li>
+          <li class="protocol" id="protoPhone"><span class="protocol__dot" aria-hidden="true"></span><span class="protocol__name">Telegram</span><span class="protocol__state" data-state>проверяю</span></li>
+        </ul>
+      </section>
+
+      <section class="panel" aria-labelledby="dayTitle">
+        <h2 id="dayTitle" class="panel__title">Сегодня</h2>
+        <ul class="meters">
+          <li class="meter" data-kind="game">
+            <div class="meter__row"><span class="meter__name">Игры</span><span class="meter__time" id="meterGame">0 мин</span></div>
+            <div class="meter__track"><span class="meter__fill" id="fillGame"></span></div>
+          </li>
+          <li class="meter" data-kind="video">
+            <div class="meter__row"><span class="meter__name">Видео</span><span class="meter__time" id="meterVideo">0 мин</span></div>
+            <div class="meter__track"><span class="meter__fill" id="fillVideo"></span></div>
+          </li>
+          <li class="meter" data-kind="work">
+            <div class="meter__row"><span class="meter__name">Работа</span><span class="meter__time" id="meterWork">0 мин</span></div>
+            <div class="meter__track"><span class="meter__fill" id="fillWork"></span></div>
+          </li>
+        </ul>
+        <p id="nowDoing" class="now-doing"></p>
+        <div class="focus">
+          <button id="focusBtn" class="btn btn--ghost btn--block" type="button">Режим фокуса на 25 минут</button>
+        </div>
+      </section>
+
+      <section class="panel panel--timers" id="timersPanel" hidden>
+        <h2 class="panel__title">Таймеры</h2>
+        <ul id="timers" class="timers" aria-label="Активные таймеры"></ul>
+      </section>
+
+      <section class="panel panel--notes">
+        <h2 class="panel__title">Дела</h2>
+        <ul id="notes" class="notes" aria-label="Список дел"></ul>
+        <p id="notesEmpty" class="panel__empty">Скажите: «Джарвис, запиши купить молоко».</p>
+        <form id="noteForm" class="note-form" autocomplete="off">
+          <label class="sr-only" for="noteInput">Новое дело</label>
+          <input id="noteInput" class="note-form__input" type="text" maxlength="400" placeholder="Добавить дело" enterkeyhint="done">
+          <button class="note-form__add" type="submit" aria-label="Добавить"><svg class="icon"><use href="#i-plus"/></svg></button>
+        </form>
+      </section>
+    </aside>
+
+    <section class="core-panel" aria-label="Реактор Джарвиса">
+      <div id="coreWrap" class="core-wrap">
+        <div id="coreBox" class="core-box">
+          <canvas id="core" class="core-canvas" aria-hidden="true"></canvas>
+          <div class="core-fallback" aria-hidden="true"></div>
+          <button id="coreBtn" class="core-hit" type="button" aria-label="Активировать Джарвиса"></button>
+        </div>
+      </div>
+      <div class="readout" role="status" aria-live="polite">
+        <span id="stateLabel" class="readout__state">Запуск</span>
+        <span id="stateHint" class="readout__hint"></span>
+      </div>
+      <p id="subtitle" class="subtitle" aria-hidden="true"></p>
+    </section>
+
+    <aside class="log-panel" aria-label="Разговор">
+      <div class="tabs" role="tablist" aria-label="Боковая панель">
+        <button id="tabTalk" class="tab" type="button" role="tab" aria-selected="true">Разговор</button>
+        <button id="tabToday" class="tab" type="button" role="tab" aria-selected="false">Системы</button>
+      </div>
+      <h2 class="panel__title log-panel__title">Связь</h2>
+      <div id="log" class="log" role="log" aria-live="polite" tabindex="0">
+        <div id="logEmpty" class="log__empty">
+          <p class="log__lead">К вашим услугам, сэр. Например:</p>
+          <ul class="examples">
+            <li>«Джарвис, открой ютуб»</li>
+            <li>«Что грузит ноутбук?»</li>
+            <li>«Позвони Алихану в телеграме»</li>
+            <li>«Что нового в робототехнике?»</li>
+            <li>«Запусти git status»</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="dock">
+    <button id="micBtn" class="mic-btn" type="button" aria-pressed="false" aria-label="Включить микрофон" title="Микрофон (M)">
+      <span id="micRing" class="mic-btn__ring" aria-hidden="true"></span>
+      <svg class="icon icon--on"><use href="#i-mic"/></svg>
+      <svg class="icon icon--off"><use href="#i-mic-off"/></svg>
+    </button>
+    <form id="composer" class="composer" autocomplete="off">
+      <label class="sr-only" for="textInput">Сообщение Джарвису</label>
+      <span class="composer__prompt" aria-hidden="true">&gt;</span>
+      <input id="textInput" class="composer__input" type="text" maxlength="2000" placeholder="Написать Джарвису" enterkeyhint="send">
+      <button class="composer__send" type="submit" aria-label="Отправить">
+        <svg class="icon"><use href="#i-send"/></svg>
+      </button>
+    </form>
+    <p class="hints" aria-hidden="true">
+      <kbd>Пробел</kbd><span>удерживать и говорить</span>
+      <kbd>Esc</kbd><span>стоп</span>
+    </p>
+  </footer>
+
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+  <dialog id="onboarding" class="sheet sheet--center" aria-labelledby="onbTitle">
+    <div class="onb" id="onbStepKey">
+      <p class="eyebrow">Шаг 1 из 2</p>
+      <h2 id="onbTitle" class="sheet__title">Подключим мозг Джарвиса</h2>
+      <p class="lead">Говорить и слушать он уже умеет. Чтобы думать, ему нужен бесплатный ключ Groq: без карты, примерно за минуту.</p>
+      <ol class="steps">
+        <li>
+          <button id="onbOpenGroq" class="btn btn--ghost" type="button">Открыть страницу ключей Groq</button>
+        </li>
+        <li>Войдите, например через Google, нажмите <b>Create API Key</b> и скопируйте ключ.</li>
+        <li>Вставьте его сюда:</li>
+      </ol>
+      <form id="onbKeyForm" class="field-row" autocomplete="off">
+        <label class="sr-only" for="onbKey">Ключ Groq</label>
+        <input id="onbKey" class="input" type="password" placeholder="gsk_…" spellcheck="false" autocomplete="off">
+        <button class="btn btn--primary" type="submit">Подключить</button>
+      </form>
+      <p id="onbKeyResult" class="form-note" role="status"></p>
+      <p class="fineprint">Ключ хранится только на этом компьютере. Ваши реплики уходят в Groq, по их условиям они не используются для обучения. Звук покидает компьютер только во время разговора: после слова «Джарвис» или нажатия пробела.</p>
+      <div class="onb__actions">
+        <button id="onbSkip" class="btn btn--text" type="button">Пока без ключа: только простые команды</button>
+      </div>
+    </div>
+    <div class="onb" id="onbStepYou" hidden>
+      <p class="eyebrow">Шаг 2 из 2</p>
+      <h2 class="sheet__title">Познакомимся, сэр</h2>
+      <p class="lead">Обращаться к вам я буду «сэр». Имя пригодится, чтобы понимать, о ком речь, а город нужен для погоды.</p>
+      <div class="field">
+        <label for="onbName">Ваше имя, необязательно</label>
+        <input id="onbName" class="input" type="text" maxlength="60" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="onbCity">Ваш город</label>
+        <input id="onbCity" class="input" type="text" maxlength="80" autocomplete="off">
+      </div>
+      <p class="fineprint">Дальше Edge спросит разрешение на микрофон: нажмите «Разрешить». Слово «Джарвис» слушается прямо на компьютере.</p>
+      <div class="onb__actions">
+        <button id="onbFinish" class="btn btn--primary" type="button">Начать</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="settings" class="sheet sheet--side" aria-labelledby="setTitle">
+    <header class="sheet__head">
+      <h2 id="setTitle" class="sheet__title">Настройки</h2>
+      <button id="settingsClose" class="icon-btn" type="button" aria-label="Закрыть настройки">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </header>
+    <div class="sheet__body">
+      <section class="group">
+        <h3 class="group__title">Голос</h3>
+        <div class="field">
+          <label for="voiceSelect">Голос</label>
+          <div class="field-row">
+            <select id="voiceSelect" class="input"></select>
+            <button id="voicePreview" class="btn btn--ghost" type="button">Послушать</button>
+          </div>
+        </div>
+        <label class="switch"><input id="voiceFxToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Обработка под Джарвиса: тембр ниже, лёгкий отзвук в броне</span></label>
+        <div class="field">
+          <label for="rateRange">Темп речи: <output id="rateValue" for="rateRange">0 %</output></label>
+          <input id="rateRange" class="range" type="range" min="-30" max="30" step="5">
+        </div>
+        <p class="fineprint">Это не копия голоса актёра, а похожий по характеру низкий мужской тембр. Если сервис голосов недоступен, говорит мужской голос Pavel из самой Windows.</p>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Разговор</h3>
+        <label class="switch"><input id="wakeToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Просыпаться на слово «Джарвис»</span></label>
+        <label class="switch"><input id="wakeCheckToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Лучше слышать имя: похожие короткие фразы проверяет Whisper</span></label>
+        <label class="switch"><input id="bargeToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Можно перебивать голосом</span></label>
+        <div class="field">
+          <label for="followRange">Ждать продолжения без имени: <output id="followValue" for="followRange">12 с</output></label>
+          <input id="followRange" class="range" type="range" min="4" max="60" step="2">
+        </div>
+        <div class="field">
+          <label for="micSelect">Микрофон</label>
+          <select id="micSelect" class="input"><option value="">Системный по умолчанию</option></select>
+        </div>
+      </section>
+
+      <section class="group" id="phoneGroup">
+        <h3 class="group__title">Telegram: удалённое управление</h3>
+        <p class="fineprint">Пишите Джарвису откуда угодно или отправляйте голосовые, а он всё сделает на ноутбуке. Нужен свой бот, это бесплатно и занимает минуту.</p>
+        <ol class="steps" id="phoneSteps">
+          <li>В Telegram откройте <b>@BotFather</b>, отправьте <b>/newbot</b>, придумайте имя и скопируйте токен.</li>
+          <li>Вставьте токен сюда:</li>
+        </ol>
+        <form id="phoneForm" class="field" autocomplete="off">
+          <label class="sr-only" for="phoneToken">Токен бота</label>
+          <div class="field-row">
+            <input id="phoneToken" class="input" type="password" spellcheck="false" autocomplete="off" placeholder="123456:ABC…">
+            <button class="btn btn--ghost" type="submit">Подключить</button>
+          </div>
+          <p id="phoneNote" class="form-note" role="status"></p>
+        </form>
+        <p id="phoneCode" class="phone-code" hidden></p>
+        <p id="phoneState" class="form-note"></p>
+        <label class="switch"><input id="awakeToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Не давать ноутбуку засыпать</span></label>
+        <label class="switch"><input id="alertsToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Сообщать на телефон: разблокировка, зарядка, батарея</span></label>
+        <p class="fineprint">Ноутбук должен быть включён, а Джарвис запущен. С подключённым телефоном закрытие окна его не выключает. Закрытую крышку настройка не отменяет, это задаётся в параметрах питания Windows.</p>
+        <div class="link-row">
+          <button id="phoneForget" class="btn btn--text" type="button" hidden>Отключить телефон</button>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Полный доступ</h3>
+        <label class="switch"><input id="shellToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Команды PowerShell с телефона</span></label>
+        <label class="switch"><input id="cameraToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Снимки с камеры ноутбука</span></label>
+        <label class="switch"><input id="anyPathToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Файлы с телефона: любые папки, в том числе системные</span></label>
+        <form id="pinForm" class="field" autocomplete="off">
+          <label for="pinInput">ПИН для команд и камеры с телефона, необязательно</label>
+          <div class="field-row">
+            <input id="pinInput" class="input" type="password" inputmode="numeric" maxlength="32" autocomplete="off" placeholder="Цифры">
+            <button class="btn btn--ghost" type="submit">Сохранить</button>
+          </div>
+          <p id="pinNote" class="form-note" role="status"></p>
+        </form>
+        <p class="fineprint">Кто получит ваш аккаунт Telegram, получит и ноутбук. Включите в Telegram облачный пароль. ПИН добавляет вторую защиту: бот откроет команды на 15 минут только после /unlock ПИН и сразу сотрёт это сообщение. Менять эти настройки можно только здесь, на самом ноутбуке.</p>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Талисман</h3>
+        <label class="switch"><input id="mascotToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Показывать мини-реактор поверх всех окон</span></label>
+        <div class="field">
+          <label for="mascotSize">Размер</label>
+          <select id="mascotSize" class="input">
+            <option value="small">Маленький</option>
+            <option value="medium">Средний</option>
+            <option value="large">Большой</option>
+          </select>
+        </div>
+        <label class="switch"><input id="captionsToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Подписи рядом с талисманом</span></label>
+        <label class="switch"><input id="mascotFullscreenToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Прятать в полноэкранных играх и фильмах</span></label>
+        <label class="switch"><input id="proactiveToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Предупреждать самому: батарея, диск, память, интернет</span></label>
+        <p class="fineprint">Нажмите на реактор, чтобы открыть большое окно, тяните его куда удобно, правая кнопка открывает меню. С талисманом закрытие большого окна не выключает Джарвиса: он продолжает слышать имя.</p>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Контроль времени</h3>
+        <label class="switch"><input id="trackToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Следить за играми, видео и работой</span></label>
+        <div class="field">
+          <label for="limitGame">Игры подряд: <output id="limitGameValue" for="limitGame">60 мин</output></label>
+          <input id="limitGame" class="range" type="range" min="0" max="240" step="5">
+        </div>
+        <div class="field">
+          <label for="limitVideo">Видео и фильмы подряд: <output id="limitVideoValue" for="limitVideo">90 мин</output></label>
+          <input id="limitVideo" class="range" type="range" min="0" max="240" step="5">
+        </div>
+        <div class="field">
+          <label for="limitWork">Спросить о самочувствии, когда вы работаете: <output id="limitWorkValue" for="limitWork">90 мин</output></label>
+          <input id="limitWork" class="range" type="range" min="0" max="240" step="5">
+        </div>
+        <label class="switch"><input id="closeGameToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Закрывать игру, когда лимит вышел</span></label>
+        <p class="fineprint">Перед закрытием я предупрежу за пять минут и за минуту. Закрываю только то, что точно игра. VS Code, Claude, браузеры и другие рабочие программы сам не закрываю никогда, а по вашей просьбе сначала переспрошу. Видео ставлю на паузу. Голосом всегда можно попросить ещё времени. Данные остаются на этом компьютере.</p>
+        <label class="switch"><input id="autostartToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Запускать Джарвиса вместе с Windows</span></label>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Мозг</h3>
+        <form id="groqForm" class="field" autocomplete="off">
+          <label for="groqKey">Ключ Groq <span class="tag">основной</span></label>
+          <div class="field-row">
+            <input id="groqKey" class="input" type="password" spellcheck="false" autocomplete="off">
+            <button class="btn btn--ghost" type="submit">Сохранить</button>
+          </div>
+          <p id="groqNote" class="form-note" role="status"></p>
+          <div class="link-row">
+            <button class="btn btn--text" type="button" data-open="groq">Получить ключ</button>
+            <button class="btn btn--text" type="button" data-delete-key="groq">Удалить</button>
+          </div>
+        </form>
+        <form id="geminiForm" class="field" autocomplete="off">
+          <label for="geminiKey">Ключ Gemini <span class="tag">запасной, необязательно</span></label>
+          <div class="field-row">
+            <input id="geminiKey" class="input" type="password" spellcheck="false" autocomplete="off">
+            <button class="btn btn--ghost" type="submit">Сохранить</button>
+          </div>
+          <p id="geminiNote" class="form-note" role="status"></p>
+          <p class="fineprint">Включается, когда у Groq кончился лимит. На бесплатном тарифе Google использует запросы для улучшения своих продуктов, поэтому личное лучше не обсуждать. Снимки экрана и заголовки окон ему не отправляются.</p>
+          <div class="link-row">
+            <button class="btn btn--text" type="button" data-open="gemini">Получить ключ</button>
+            <button class="btn btn--text" type="button" data-delete-key="gemini">Удалить</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Экран</h3>
+        <label class="switch"><input id="screenToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Джарвис может смотреть на экран</span></label>
+        <p class="fineprint">Снимок делается только когда вы просите посмотреть, и уходит в модель зрения Groq, вверху окна в этот момент горит значок. Постоянной записи экрана нет. Заголовок активного окна передаётся Groq вместе с репликой, чтобы я понимал, о чём речь.</p>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">О вас</h3>
+        <div class="field">
+          <label for="nameInput">Ваше имя, необязательно. Обращаться я всё равно буду «сэр»</label>
+          <input id="nameInput" class="input" type="text" maxlength="60" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="cityInput">Город для погоды</label>
+          <input id="cityInput" class="input" type="text" maxlength="80" autocomplete="off">
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Что я помню</h3>
+        <ul id="factsList" class="facts"></ul>
+        <p id="factsEmpty" class="form-note">Пока ничего. Скажите: «Джарвис, запомни, что я пью кофе без сахара».</p>
+        <button id="clearHistory" class="btn btn--text" type="button">Очистить историю разговора</button>
+      </section>
+
+      <section class="group">
+        <h3 class="group__title">Система</h3>
+        <label class="switch"><input id="powerToggle" type="checkbox"><span class="switch__track" aria-hidden="true"></span><span>Экономный режим анимации</span></label>
+        <button id="selfCheck" class="btn btn--ghost" type="button">Проверить все сервисы</button>
+        <ul id="checkList" class="checks"></ul>
+        <button id="shutdownBtn" class="btn btn--text" type="button">Выключить Джарвиса полностью</button>
+      </section>
+    </div>
+  </dialog>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>
